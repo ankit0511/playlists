@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/style.css" rel="stylesheet">
+    <title>Music Playlist Generator</title>
+    
+</head>
+<body>
+    <h1>Generate Your Playlist Based on Your Mood</h1>
+
+    <% if (error) { %>
+        <p style="color: red;"><%= error %></p>
+    <% } %>
+
+    <form action="/generate-playlist" method="POST">
+        <label for="mood">Select your mood:</label>
+        <select name="mood" id="mood" required>
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="energetic">Energetic</option>
+            <option value="chill">Chill</option>
+        </select>
+        <button type="submit">Generate Playlist</button>
+    </form>
+</body>
+</html>

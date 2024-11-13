@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlists for <%= mood %> Mood</title>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <h1>Playlists for "<%= mood %>" Mood</h1>
+    
+    <% if (playlists.length === 0) { %>
+        <p>No playlists found for your mood.</p>
+    <% } else { %>
+        <ul>
+            <% playlists.forEach(playlist => { %>
+                <li>
+                    <div class="playlist-image-container">
+                        <% if (playlist.images && playlist.images.length > 0) { %>
+                            <img src="<%= playlist.images[0].url %>" alt="playlist-image" class="playlist-image">
+                        <% } else { %>
+                            <img src="path/to/placeholder/image.jpg" alt="playlist-image" class="playlist-image">
+                        <% } %>
+                    </div>
+                    <a href="<%= playlist.external_urls.spotify %>" target="_blank">
+                        <h3><%= playlist.name %></h3>
+                        <% 
+                            let description = playlist.description || 'No description available'; 
+                            // Remove any links (href="spotify:...") from the description
+                            description = description.replace(/<a[^>]+href="[^"]+"[^>]*>[^<]*<\/a>/g, '');
+                            // If there is still content that looks like a URL, set the description to 'No description available'
+                            if (description.match(/https?:\/\/[^\s]+/)) {
+                                description = 'No description available';
+                            }
+                        %>
+                        <!-- <p><%= description %></p> -->
+                    </a>
+                    <button class="share-btn" onclick="showSharePopup('<%= playlist.external_urls.spotify %>')">Share</button>
+                </li>
+            <% }) %>
+            
+        </ul>
+    <% } %>
+
+    <a href="/">Back to Mood Selection</a>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="share-modal">
+        <div class="share-modal-content">
+            <span class="close-btn" onclick="closeSharePopup()">×</span>
+            <h3>Share Playlist</h3>
+            <button onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button onclick="generateEmbedCode()">Embed</button>
+            <div id="embedCodeContainer" style="display: none;">
+                <textarea id="embedCode" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/share.js"></script>
+</body>
+</html>

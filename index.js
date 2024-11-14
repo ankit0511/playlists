@@ -1,20 +1,23 @@
+// Import necessary modules
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
-const app = express();
 const bodyParser = require('body-parser');
+require('dotenv').config(); 
 
+const app = express();
 
+// Middleware and view engine setup
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-// Set up the view engine for EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-const clientId = 'ffbfb3ac94554218871cf8e86193108f';
-const clientSecret = 'b0f45247da6f437283f93278498f2db6';
+// Retrieve client ID and secret from environment variables
+const clientId = process.env.SPOTIFY_CLIENT_ID;
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-// Define the mood-to-genre mapping (you can extend this as needed)
+// Mood-to-genre mapping
 const moodGenres = {
     happy: 'pop',
     sad: 'sad',
@@ -22,59 +25,64 @@ const moodGenres = {
     chill: 'indie',
 };
 
-// Function to get access token from Spotify
+// Function to get an access token from Spotify
 async function getAccessToken() {
-    const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret,
-    }), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    return response.data.access_token;
+    try {
+        const response = await axios.post(
+            'https://accounts.spotify.com/api/token',
+            new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: clientId,
+                client_secret: clientSecret,
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        return response.data.access_token;
+    } catch (error) {
+        console.error('Error fetching access token:', error);
+        throw new Error('Failed to retrieve access token.');
+    }
 }
 
-// Function to search Spotify playlists based on mood and genre
+// Function to search Spotify playlists based on genre
 async function searchPlaylists(query, accessToken) {
-    const response = await axios.get('https://api.spotify.com/v1/search', {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-        params: {
-            q: query,
-            type: 'playlist',
-            limit: 15
-        }
-    });
-    return response.data.playlists.items;
+    try {
+        const response = await axios.get('https://api.spotify.com/v1/search', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { q: query, type: 'playlist', limit: 15 },
+        });
+        return response.data.playlists.items;
+    } catch (error) {
+        console.error('Error searching playlists:', error);
+        throw new Error('Failed to search playlists.');
+    }
 }
 
-// Route to show the form for selecting mood
+// Route to render the homepage
 app.get('/', (req, res) => {
-    res.render('index',{ error: null });
+    res.render('index', { error: null });
 });
 
-// Route to handle form submission and display playlists based on mood
+// Route to generate playlist based on mood
 app.post('/generate-playlist', async (req, res) => {
     const { mood } = req.body;
-    
+
     if (!mood || !moodGenres[mood]) {
-        return res.render('index', { error: 'Invalid mood selected!' });
+        return res.render('index', { error: 'Please select a valid mood.' });
     }
 
     try {
-        const accessToken = await getAccessToken();  // Get access token
-        const genre = moodGenres[mood];  // Map mood to genre
-        const playlists = await searchPlaylists(genre, accessToken);  // Fetch playlists based on mood
-        res.render('playlists', { playlists: playlists, mood: mood });
+        const accessToken = await getAccessToken();
+        const genre = moodGenres[mood];
+        const playlists = await searchPlaylists(genre, accessToken);
+        res.render('playlists', { playlists, mood });
     } catch (error) {
-        console.error('Error fetching playlists:', error);
-        res.render('index', { error: 'There was an error generating the playlist.' });
+        res.render('index', { error: 'Error generating playlist. Please try again.' });
     }
 });
 
 // Start the server
-app.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT ||3000;
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
-
-
-// Spotify API credentials
